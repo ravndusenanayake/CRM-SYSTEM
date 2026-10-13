@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 54" width="100%" height="100%">
+  <!-- Wurth Red Emblem -->
+  <g fill="#CC0000">
+    <!-- Top Screw Head -->
+    <path d="M6 8 H22 V19 H32 V8 H48 V23 H6 Z" />
+    <!-- Bottom Screw Head -->
+    <path d="M6 29 H22 V35 H32 V29 H48 C48 42 39 49 27 49 C15 49 6 42 6 29 Z" />
+  </g>
+</svg>
