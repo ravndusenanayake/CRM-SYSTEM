@@ -36,3 +36,12 @@ crm_index.js
 crm_index.css
 crm_index.html
 cookies.txt
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+server/data/*.db
+!server/data/.gitkeep
+

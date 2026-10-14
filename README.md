@@ -33,7 +33,10 @@ The system centralizes tele-sales outbound operations, customer service, field s
 - **Styling**: Tailwind CSS with custom Wurth Corporate Theme (`#CC0000` Crimson, `#0F172A` Slate)
 - **Icons**: Lucide React
 - **Typography**: Plus Jakarta Sans & JetBrains Mono
-- **State & Persistence**: React Context API synchronized with browser LocalStorage (`wurth_crm_v2_*`)
+- **Backend Server**: Node.js + Express 5 REST API (`server/`)
+- **Database**: SQLite (Native `node:sqlite` engine, zero external binary dependency)
+- **Database Path**: `server/data/crm.db` (auto-seeded on first launch)
+- **State & Synchronization**: React Context API synchronized with SQLite REST API, with automatic LocalStorage offline fallback
 
 ---
 
@@ -42,12 +45,29 @@ The system centralizes tele-sales outbound operations, customer service, field s
 ```text
 ├── public/                    # Static assets & icons
 │   └── wurth-icon.svg
+├── server/                    # Node.js + Express REST API Backend
+│   ├── data/                  # SQLite database storage (crm.db)
+│   ├── routes/                # Modular REST API route handlers
+│   │   ├── bootstrap.js       # Fast single-query initial sync
+│   │   ├── customers.js       # Customer CRUD, bulk import, reassignment
+│   │   ├── leads.js           # Lead pipeline & lead-to-customer conversion
+│   │   ├── calls.js           # Outbound telephony & linked inquiries/complaints
+│   │   ├── inquiries.js       # Product quotation management
+│   │   ├── complaints.js      # Customer dispute & SLA tracking
+│   │   ├── pabx.js            # Telephony CDR records & lead capture
+│   │   ├── users.js           # CRM user accounts & targets
+│   │   ├── salespersons.js    # Field sales consultant tracking
+│   │   ├── notifications.js   # Notification system
+│   │   └── settings.js        # System parameters
+│   ├── db.js                  # Database connection, schemas, and auto-seeding
+│   └── index.js               # Express server entry point & SPA static host
 ├── src/
 │   ├── components/            # Reusable UI components & modals
 │   │   ├── common/            # Logo, Modal dialogs
-│   │   ├── layout/            # Sidebar, Header
+│   │   ├── layout/            # Sidebar, Header (with live DB badge)
 │   │   └── modals/            # LogCallModal, CustomerModal, CustomerDetailModal
-│   ├── context/               # CrmContext state provider & RBAC logic
+│   ├── context/               # CrmContext state provider & SQLite sync
+│   ├── services/              # crmApi client service for backend endpoints
 │   ├── data/                  # Default mock fixtures
 │   ├── pages/                 # 15 Module Views (Dashboard, Customers, etc.)
 │   ├── types/                 # TypeScript interfaces (Customer, Lead, Call, etc.)
@@ -66,7 +86,7 @@ The system centralizes tele-sales outbound operations, customer service, field s
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
+- Node.js (v18 or higher; Node 22+ recommended for built-in `node:sqlite`)
 - npm or yarn
 
 ### Installation & Run
@@ -82,15 +102,24 @@ The system centralizes tele-sales outbound operations, customer service, field s
    npm install
    ```
 
-3. Run development server:
-   ```bash
-   npm run dev
-   ```
+3. Run in **Development Mode** (Vite + Express):
+   - Terminal 1 (Backend API):
+     ```bash
+     npm run server
+     ```
+     *(Runs Express + SQLite at `http://localhost:5000`)*
+   - Terminal 2 (Frontend with Hot-Reload):
+     ```bash
+     npm run dev
+     ```
+     *(Runs Vite at `http://localhost:5173` with automatic `/api` proxy)*
 
-4. Build for production:
+4. Run in **Production / All-In-One Mode**:
    ```bash
    npm run build
+   npm start
    ```
+   *(Builds client bundle and serves both the REST API and the frontend at `http://localhost:5000`)*
 
 ---
 

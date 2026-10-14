@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import {
   User,
   Salesperson,
@@ -28,6 +28,7 @@ import {
   INITIAL_NOTIFICATIONS,
   INITIAL_SETTINGS
 } from '../data/initialData';
+import { crmApi } from '../services/api';
 
 const STORAGE_PREFIX = 'wurth_crm_v2_';
 
@@ -68,7 +69,12 @@ interface LogCallParams {
   complaintPriority?: ComplaintPriority;
 }
 
+export type DbStatus = 'connected' | 'connecting' | 'offline';
+
 interface CrmContextType {
+  dbStatus: DbStatus;
+  refreshData: () => Promise<void>;
+
   users: User[];
   currentUser: User;
   currentUserId: string;
@@ -121,6 +127,8 @@ interface CrmContextType {
 const CrmContext = createContext<CrmContextType | undefined>(undefined);
 
 export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [dbStatus, setDbStatus] = useState<DbStatus>('connecting');
+
   const [users, setUsers] = useState<User[]>(() => loadFromStorage('users', INITIAL_USERS));
   const [currentUserId, setCurrentUserId] = useState<string>(() => loadFromStorage('currentUserId', 'admin-1'));
   const [salespersons, setSalespersons] = useState<Salesperson[]>(() => loadFromStorage('salespersons', INITIAL_SALESPERSONS));
@@ -133,6 +141,7 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => loadFromStorage('notifications', INITIAL_NOTIFICATIONS));
   const [settings, setSettings] = useState<SystemSettings>(() => loadFromStorage('settings', INITIAL_SETTINGS));
 
+  // Sync to localStorage as offline cache
   useEffect(() => saveToStorage('users', users), [users]);
   useEffect(() => saveToStorage('currentUserId', currentUserId), [currentUserId]);
   useEffect(() => saveToStorage('salespersons', salespersons), [salespersons]);
@@ -144,6 +153,34 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => saveToStorage('pabx', pabxRecords), [pabxRecords]);
   useEffect(() => saveToStorage('notifications', notifications), [notifications]);
   useEffect(() => saveToStorage('settings', settings), [settings]);
+
+  // Load from REST API SQLite Backend
+  const refreshData = useCallback(async () => {
+    try {
+      const data = await crmApi.getBootstrap();
+      if (data) {
+        if (data.users?.length) setUsers(data.users);
+        if (data.salespersons?.length) setSalespersons(data.salespersons);
+        if (data.customers?.length) setAllCustomers(data.customers);
+        if (data.leads?.length) setAllLeads(data.leads);
+        if (data.calls?.length) setCalls(data.calls);
+        if (data.inquiries?.length) setInquiries(data.inquiries);
+        if (data.complaints?.length) setComplaints(data.complaints);
+        if (data.pabxRecords?.length) setPabxRecords(data.pabxRecords);
+        if (data.notifications?.length) setNotifications(data.notifications);
+        if (data.settings && Object.keys(data.settings).length) setSettings(data.settings);
+        setDbStatus('connected');
+        console.log('✅ SQLite Backend Connected (server/data/crm.db)');
+      }
+    } catch (err) {
+      console.warn('⚠️ Backend REST API not reachable, running in offline mode:', err);
+      setDbStatus('offline');
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0];
   const isAdmin = currentUser.role === 'ADMIN';
@@ -168,6 +205,16 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updatedBy: currentUser.name
     };
     setAllCustomers(prev => [newCustomer, ...prev]);
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.addCustomer(data).then(created => {
+        if (created && created.id) {
+          setAllCustomers(prev => prev.map(c => c.id === newId ? created : c));
+        }
+      }).catch(err => console.error('Failed to sync customer to SQLite:', err));
+    }
+
     return newCustomer;
   };
 
@@ -176,13 +223,26 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAllCustomers(prev =>
       prev.map(c => (c.id === id ? { ...c, ...updates, updatedAt: today, updatedBy: currentUser.name } : c))
     );
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.updateCustomer(id, { ...updates, updatedBy: currentUser.name }).catch(err =>
+        console.error('Failed to sync customer update to SQLite:', err)
+      );
+    }
   };
 
   const deleteCustomer = (id: string) => {
     setAllCustomers(prev => prev.filter(c => c.id !== id));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.deleteCustomer(id).catch(err => console.error('Failed to delete customer from SQLite:', err));
+    }
   };
 
   const reassignCustomer = (customerId: string, newCrmUserId?: string, newSalespersonId?: string) => {
+    const today = new Date().toISOString().split('T')[0];
     setAllCustomers(prev =>
       prev.map(c => {
         if (c.id !== customerId) return c;
@@ -190,11 +250,18 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           ...c,
           assignedCrmUserId: newCrmUserId || c.assignedCrmUserId,
           assignedSalespersonId: newSalespersonId || c.assignedSalespersonId,
-          updatedAt: new Date().toISOString().split('T')[0],
+          updatedAt: today,
           updatedBy: currentUser.name
         };
       })
     );
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.reassignCustomer(customerId, newCrmUserId, newSalespersonId, currentUser.name).catch(err =>
+        console.error('Failed to reassign customer in SQLite:', err)
+      );
+    }
   };
 
   const addCustomerVisitNotes = (customerId: string, newNote: string) => {
@@ -212,6 +279,13 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
       })
     );
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.addCustomerVisitNotes(customerId, newNote, currentUser.name).catch(err =>
+        console.error('Failed to save visit note to SQLite:', err)
+      );
+    }
   };
 
   const bulkImportCustomers = (newItems: Omit<Customer, 'id' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[]): number => {
@@ -226,12 +300,20 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updatedBy: currentUser.name
     }));
     setAllCustomers(prev => [...mapped, ...prev]);
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.bulkImportCustomers(newItems).then(() => refreshData()).catch(err =>
+        console.error('Failed to bulk import to SQLite:', err)
+      );
+    }
+
     return mapped.length;
   };
 
   const addLead = (leadData: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>): Lead => {
     const today = new Date().toISOString().split('T')[0];
-    const newId = `LEAD-${new Date().getFullYear()}-${String(allLeads.length + 1).padStart(2, '0')}`;
+    const newId = `LEAD-${new Date().getFullYear()}-${String(allLeads.length + 1).padStart(3, '0')}`;
     const newLead: Lead = {
       ...leadData,
       id: newId,
@@ -239,16 +321,36 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updatedAt: today
     };
     setAllLeads(prev => [newLead, ...prev]);
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.addLead(leadData).then(created => {
+        if (created && created.id) {
+          setAllLeads(prev => prev.map(l => l.id === newId ? created : l));
+        }
+      }).catch(err => console.error('Failed to save lead to SQLite:', err));
+    }
+
     return newLead;
   };
 
   const updateLead = (id: string, updates: Partial<Lead>) => {
     const today = new Date().toISOString().split('T')[0];
     setAllLeads(prev => prev.map(l => (l.id === id ? { ...l, ...updates, updatedAt: today } : l)));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.updateLead(id, updates).catch(err => console.error('Failed to update lead in SQLite:', err));
+    }
   };
 
   const deleteLead = (id: string) => {
     setAllLeads(prev => prev.filter(l => l.id !== id));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.deleteLead(id).catch(err => console.error('Failed to delete lead from SQLite:', err));
+    }
   };
 
   const convertLeadToCustomer = (leadId: string): Customer | null => {
@@ -273,13 +375,21 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
 
     updateLead(leadId, { status: 'Converted to Customer' });
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.convertLeadToCustomer(leadId).catch(err =>
+        console.error('Failed to convert lead in SQLite:', err)
+      );
+    }
+
     return newCustomer;
   };
 
   const logCall = (params: LogCallParams) => {
     const today = new Date();
     const dateStr = today.toISOString().replace('T', ' ').substring(0, 16);
-    const newCallId = `CALL-${today.getFullYear()}-${allCallsNextIndex()}`;
+    const newCallId = `CALL-${today.getFullYear()}-${100 + calls.length + 1}`;
 
     let linkedInqId: string | undefined;
     let linkedCmpId: string | undefined;
@@ -352,10 +462,14 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         nextFollowUpDate: params.nextFollowUpDate || undefined
       });
     }
-  };
 
-  const allCallsNextIndex = () => {
-    return 100 + calls.length + 1;
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.logCall({
+        ...params,
+        crmUserId: currentUser.id
+      }).catch(err => console.error('Failed to log call to SQLite:', err));
+    }
   };
 
   const addInquiry = (inqData: Omit<Inquiry, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -368,11 +482,27 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updatedAt: today
     };
     setInquiries(prev => [newInquiry, ...prev]);
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.addInquiry(inqData).then(created => {
+        if (created && created.id) {
+          setInquiries(prev => prev.map(i => i.id === newId ? created : i));
+        }
+      }).catch(err => console.error('Failed to save inquiry to SQLite:', err));
+    }
   };
 
   const updateInquiryStatus = (id: string, status: InquiryStatus) => {
     const today = new Date().toISOString().split('T')[0];
     setInquiries(prev => prev.map(inq => (inq.id === id ? { ...inq, status, updatedAt: today } : inq)));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.updateInquiryStatus(id, status).catch(err =>
+        console.error('Failed to update inquiry status in SQLite:', err)
+      );
+    }
   };
 
   const addComplaint = (compData: Omit<Complaint, 'id' | 'createdAt'>) => {
@@ -384,6 +514,15 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       createdAt: today
     };
     setComplaints(prev => [newComplaint, ...prev]);
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.addComplaint(compData).then(created => {
+        if (created && created.id) {
+          setComplaints(prev => prev.map(c => c.id === newId ? created : c));
+        }
+      }).catch(err => console.error('Failed to save complaint to SQLite:', err));
+    }
   };
 
   const updateComplaintStatus = (id: string, status: ComplaintStatus, resolutionNotes?: string) => {
@@ -400,6 +539,13 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           : c
       )
     );
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.updateComplaintStatus(id, status, resolutionNotes).catch(err =>
+        console.error('Failed to update complaint status in SQLite:', err)
+      );
+    }
   };
 
   const convertPabxRecordToLead = (pabxId: string, companyName: string, contactPerson: string) => {
@@ -423,30 +569,62 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setPabxRecords(prev =>
       prev.map(p => (p.id === pabxId ? { ...p, isLeadConverted: true, matchedCompanyName: companyName } : p))
     );
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.convertPabxRecordToLead(pabxId, companyName, contactPerson).catch(err =>
+        console.error('Failed to convert PABX to lead in SQLite:', err)
+      );
+    }
   };
 
   const markNotificationAsRead = (id: string) => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.markNotificationAsRead(id).catch(err => console.error('Failed to mark notification read in SQLite:', err));
+    }
   };
 
   const markAllNotificationsAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.markAllNotificationsAsRead().catch(err => console.error('Failed to mark all read in SQLite:', err));
+    }
   };
 
   const addUser = (userData: Omit<User, 'id'>) => {
     const newId = `user-${users.length + 1}`;
     setUsers(prev => [...prev, { ...userData, id: newId }]);
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.addUser(userData).catch(err => console.error('Failed to add user to SQLite:', err));
+    }
   };
 
   const updateUser = (id: string, updates: Partial<User>) => {
     setUsers(prev => prev.map(u => (u.id === id ? { ...u, ...updates } : u)));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.updateUser(id, updates).catch(err => console.error('Failed to update user in SQLite:', err));
+    }
   };
 
   const updateSettings = (updates: Partial<SystemSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));
+
+    // Async DB save
+    if (dbStatus === 'connected') {
+      crmApi.updateSettings(updates).catch(err => console.error('Failed to update settings in SQLite:', err));
+    }
   };
 
-  const resetDatabase = () => {
+  const resetDatabase = async () => {
     localStorage.clear();
     setUsers(INITIAL_USERS);
     setCurrentUserId('admin-1');
@@ -459,11 +637,23 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setPabxRecords(INITIAL_PABX);
     setNotifications(INITIAL_NOTIFICATIONS);
     setSettings(INITIAL_SETTINGS);
+
+    if (dbStatus === 'connected') {
+      try {
+        await crmApi.resetDatabase();
+        await refreshData();
+      } catch (err) {
+        console.error('Failed to reset backend SQLite:', err);
+      }
+    }
   };
 
   return (
     <CrmContext.Provider
       value={{
+        dbStatus,
+        refreshData,
+
         users,
         currentUser,
         currentUserId,

@@ -33,7 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
     markNotificationAsRead,
     markAllNotificationsAsRead,
     allCustomers,
-    allLeads
+    allLeads,
+    dbStatus
   } = useCrm();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -280,6 +281,37 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Database Status Indicator */}
+        <div className="hidden sm:flex items-center">
+          {dbStatus === 'connected' && (
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+              title="Connected to SQLite REST API (server/data/crm.db)"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              SQLite DB
+            </span>
+          )}
+          {dbStatus === 'offline' && (
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200"
+              title="Backend offline: LocalStorage fallback active"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              Offline (Local)
+            </span>
+          )}
+          {dbStatus === 'connecting' && (
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-50 text-slate-500 border border-slate-200"
+              title="Connecting to SQLite Backend..."
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-ping" />
+              Connecting...
+            </span>
           )}
         </div>
 
