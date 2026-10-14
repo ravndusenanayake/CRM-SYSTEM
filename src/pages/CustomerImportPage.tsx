@@ -153,7 +153,7 @@ export const CustomerImportPage: React.FC<CustomerImportPageProps> = ({
   const validateAndSetRows = (rawRows: any[]) => {
     const validated: ParsedCustomerRow[] = rawRows.map((row, idx) => {
       const cleanPhone = (row.mobile || '').replace(/\s+/g, '');
-      
+
       // Duplicate search in existing master customer database
       const existingMatch = allCustomers.find(c => {
         const cPhone = (c.mobile || '').replace(/\s+/g, '');
