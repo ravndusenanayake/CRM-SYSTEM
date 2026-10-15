@@ -84,11 +84,10 @@ export const UserManagementPage: React.FC = () => {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        u.role === 'ADMIN'
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN'
                           ? 'bg-red-50 text-[#CC0000] border border-red-200'
                           : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
+                        }`}
                     >
                       {u.role}
                     </span>
