@@ -553,7 +553,7 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!cdr) return;
 
     addLead({
-      contactName,
+      contactName: contactPerson,
       companyName,
       phone: cdr.externalNumber,
       email: 'info@prospect.lk',
