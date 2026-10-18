@@ -180,9 +180,8 @@ export const ComplaintsPage: React.FC = () => {
                   return (
                     <tr
                       key={cmp.id}
-                      className={`hover:bg-slate-50 transition-colors ${
-                        cmp.priority === 'Critical' && !isResolved ? 'bg-red-50/20' : ''
-                      }`}
+                      className={`hover:bg-slate-50 transition-colors ${cmp.priority === 'Critical' && !isResolved ? 'bg-red-50/20' : ''
+                        }`}
                     >
                       <td className="px-4 py-3">
                         <div className="font-mono font-bold text-[#CC0000]">{cmp.id}</div>
@@ -208,13 +207,12 @@ export const ComplaintsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            cmp.priority === 'Critical'
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${cmp.priority === 'Critical'
                               ? 'bg-red-100 text-[#CC0000] border border-red-300'
                               : cmp.priority === 'High'
-                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                              : 'bg-slate-100 text-slate-700 border border-slate-200'
-                          }`}
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
                         >
                           {cmp.priority}
                         </span>
@@ -226,11 +224,10 @@ export const ComplaintsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            isResolved
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${isResolved
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}
+                            }`}
                         >
                           {cmp.status}
                         </span>

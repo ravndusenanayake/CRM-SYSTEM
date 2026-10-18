@@ -113,6 +113,7 @@ interface CrmContextType {
   updateComplaintStatus: (id: string, status: ComplaintStatus, resolutionNotes?: string) => void;
 
   convertPabxRecordToLead: (pabxId: string, companyName: string, contactPerson: string) => void;
+  simulatePabxCall: (payload?: Record<string, unknown>) => Promise<void>;
 
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
@@ -578,6 +579,18 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const simulatePabxCall = async (payload?: Record<string, unknown>) => {
+    try {
+      const res = await crmApi.simulatePabxCall(payload);
+      if (res) {
+        setPabxRecords(prev => [res, ...prev.filter(p => p.id !== res.id)]);
+        await refreshData();
+      }
+    } catch (err) {
+      console.error('Failed to simulate PABX call:', err);
+    }
+  };
+
   const markNotificationAsRead = (id: string) => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
 
@@ -692,6 +705,7 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateComplaintStatus,
 
         convertPabxRecordToLead,
+        simulatePabxCall,
 
         markNotificationAsRead,
         markAllNotificationsAsRead,

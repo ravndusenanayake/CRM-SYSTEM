@@ -150,6 +150,11 @@ export const crmApi = {
       method: 'POST',
       body: JSON.stringify({ companyName, contactPerson })
     }),
+  simulatePabxCall: (payload?: Record<string, unknown>) =>
+    request<PabxRecord>('/pabx/test', {
+      method: 'POST',
+      body: JSON.stringify(payload || {})
+    }),
 
   // Notifications
   getNotifications: () => request<NotificationItem[]>('/notifications'),
