@@ -110,7 +110,7 @@ export const PabxImportPage: React.FC<PabxImportPageProps> = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
           <button
             onClick={() => setIsConfigModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs shadow-2xs"

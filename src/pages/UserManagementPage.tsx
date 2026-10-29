@@ -53,7 +53,7 @@ export const UserManagementPage: React.FC = () => {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#CC0000] text-white text-xs font-bold hover:bg-[#B30000] shadow-xs"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#CC0000] text-white text-xs font-bold hover:bg-[#B30000] shadow-xs shrink-0 self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>Add System User</span>

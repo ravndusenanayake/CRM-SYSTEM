@@ -1,7 +1,56 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { db } from '../db.js';
 
 const router = Router();
+
+// --- Access control for the UCM push -------------------------------------
+// PABX_ALLOWED_IPS="10.104.128.21"      -> only the UCM may POST (comma separated)
+// PABX_USER / PABX_PASS                  -> optional HTTP Basic auth check
+// Both are optional: when not set, the webhook behaves as before.
+function requireUcm(req, res, next) {
+  const allowed = (process.env.PABX_ALLOWED_IPS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (allowed.length) {
+    const ip = String(req.ip || req.socket?.remoteAddress || '').replace(/^::ffff:/, '');
+    if (!allowed.includes(ip)) {
+      return res.status(403).json({ success: false, error: `IP ${ip} not allowed` });
+    }
+  }
+  const user = process.env.PABX_USER;
+  const pass = process.env.PABX_PASS;
+  if (user || pass) {
+    const header = req.headers.authorization || '';
+    if (header.startsWith('Basic ')) {
+      const [u, ...rest] = Buffer.from(header.slice(6), 'base64').toString().split(':');
+      if (u === user && rest.join(':') === pass) return next();
+    }
+    res.set('WWW-Authenticate', 'Basic realm="PABX"');
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  next();
+}
+
+// UCM may post text/plain; accept it and parse JSON ourselves
+const textBody = express.text({ type: ['text/*', 'application/octet-stream'], limit: '10mb' });
+
+// Flatten every payload shape we may receive into a plain list of CDR rows:
+//  - single object / array / { records: [] } / { cdr: [] }     (real-time output, manual)
+//  - legacy CDR API JSON: { cdr_root: [ { main_cdr, sub_cdr_1.. } ] }
+function extractRecords(payload) {
+  if (payload === undefined || payload === null) return [];
+  if (typeof payload === 'string') {
+    try { return extractRecords(JSON.parse(payload)); } catch { throw new Error('Body is not valid JSON (set CDR Format = JSON on the UCM)'); }
+  }
+  if (Array.isArray(payload)) return payload.flatMap(extractRecords);
+  if (typeof payload !== 'object') return [];
+  if (payload.cdr_root) return extractRecords(payload.cdr_root);
+  const subKeys = Object.keys(payload).filter(k => k.startsWith('sub_cdr')).sort();
+  if (payload.main_cdr || subKeys.length) {
+    return subKeys.length ? subKeys.map(k => payload[k]) : [payload.main_cdr];
+  }
+  if (Array.isArray(payload.records)) return payload.records;
+  if (Array.isArray(payload.cdr)) return payload.cdr;
+  return [payload];
+}
 
 // Helper: Normalize Sri Lankan phone numbers for matching (+94771234567, 94771234567, 0771234567, 771234567)
 function cleanPhoneNumber(phone) {
@@ -47,12 +96,26 @@ function parseCdrRecord(raw) {
   let extension = String(p.extension || '').trim();
   let externalNumber = String(p.externalNumber || '').trim();
 
-  // If Grandstream raw call, infer direction from extension length (usually 3 or 4 digits, e.g. 201-220)
+  // Grandstream puts Inbound / Outbound / Internal in `userfield`; use it first.
   if (!direction || direction === 'ALL') {
+    const uf = String(p.userfield || '').trim().toLowerCase();
+    const answeredExt = String(p.dstanswer || p.dstchannel_ext || '').trim();
     const srcIsExt = src.length >= 2 && src.length <= 4 && !isNaN(Number(src));
     const dstIsExt = dst.length >= 2 && dst.length <= 4 && !isNaN(Number(dst));
 
-    if (srcIsExt && !dstIsExt) {
+    if (uf === 'inbound') {
+      direction = 'Inbound';
+      extension = answeredExt || dst;       // dst can be a ring group / IVR, dstanswer is who picked up
+      externalNumber = src;
+    } else if (uf === 'outbound') {
+      direction = 'Outbound';
+      extension = String(p.channel_ext || src).trim();
+      externalNumber = dst;
+    } else if (uf === 'internal' || (srcIsExt && dstIsExt)) {
+      direction = 'Internal';               // extension-to-extension, not a customer call
+      extension = src;
+      externalNumber = dst;
+    } else if (srcIsExt && !dstIsExt) {
       direction = 'Outbound';
       extension = src;
       externalNumber = dst;
@@ -61,7 +124,7 @@ function parseCdrRecord(raw) {
       extension = dst;
       externalNumber = src;
     } else {
-      direction = p.direction || 'Inbound';
+      direction = 'Inbound';
       extension = extension || src || '201';
       externalNumber = externalNumber || dst || src || 'Unknown';
     }
@@ -74,8 +137,8 @@ function parseCdrRecord(raw) {
   let disposition = p.disposition || 'Answered';
   if (typeof disposition === 'string') {
     const upper = disposition.toUpperCase();
-    if (upper.includes('ANSWER')) disposition = 'Answered';
-    else if (upper.includes('NO ANSWER')) disposition = 'No Answer';
+    if (upper.includes('NO ANSWER')) disposition = 'No Answer';
+    else if (upper.includes('ANSWER')) disposition = 'Answered';
     else if (upper.includes('BUSY')) disposition = 'Busy';
     else if (upper.includes('FAIL')) disposition = 'Failed';
   }
@@ -87,7 +150,7 @@ function parseCdrRecord(raw) {
   }
 
   // CDR Unique ID
-  const id = p.id || p.uniqueid || p.record_id || `PBX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const id = p.id || (p.uniqueid ? `${p.uniqueid}-${dst || 'x'}` : null) || p.record_id || `PBX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   // Auto Customer Match
   const matchedCust = findMatchingCustomer(externalNumber);
@@ -121,19 +184,8 @@ router.get('/', (req, res) => {
 // 2. Ingest CDR Record (Grandstream UCM Webhook / Manual / Batch)
 const handleIncomingCdr = (req, res) => {
   try {
-    const payload = req.body;
-    let records = [];
-
-    // Grandstream can send single object, or array of records, or { records: [...] }
-    if (Array.isArray(payload)) {
-      records = payload;
-    } else if (payload.records && Array.isArray(payload.records)) {
-      records = payload.records;
-    } else if (payload.cdr && Array.isArray(payload.cdr)) {
-      records = payload.cdr;
-    } else {
-      records = [payload];
-    }
+    if (process.env.PABX_DEBUG) console.log('[PABX] raw body:', JSON.stringify(req.body));
+    const records = extractRecords(req.body);
 
     const insert = db.prepare(`
       INSERT OR REPLACE INTO pabx (
@@ -147,6 +199,7 @@ const handleIncomingCdr = (req, res) => {
     for (const item of records) {
       if (!item || (typeof item !== 'object')) continue;
       const parsed = parseCdrRecord(item);
+      if (parsed.direction === 'Internal') continue;   // ext-to-ext calls are not CRM calls
 
       insert.run(
         parsed.id,
@@ -197,9 +250,9 @@ const handleIncomingCdr = (req, res) => {
 };
 
 // Main endpoints for Grandstream Webhook & CRM
-router.post('/', handleIncomingCdr);
-router.post('/grandstream', handleIncomingCdr);
-router.post('/webhook', handleIncomingCdr);
+router.post('/', requireUcm, textBody, handleIncomingCdr);
+router.post('/grandstream', requireUcm, textBody, handleIncomingCdr);
+router.post('/webhook', requireUcm, textBody, handleIncomingCdr);
 
 // 3. Test Simulation Endpoint (For IT / Admin to verify webhook connection)
 router.post('/test', (req, res) => {

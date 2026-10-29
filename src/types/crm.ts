@@ -21,12 +21,42 @@ export interface Salesperson {
   email: string;
   region: string;
   division: string;
-  targetQuarterLkr: number;
+  targetQuarterLkr?: number;
+  monthlyTargetLkr?: number;
   currentSalesLkr: number;
 }
 
-export type CustomerType = 'Workshop' | 'Fleet Operator' | 'Construction Contractor' | 'Marine & Industrial' | 'Retailer' | 'Other';
-export type CustomerStatus = 'Active' | 'Inactive' | 'Lead';
+export type CustomerType =
+  | 'Workshop'
+  | 'Fleet Operator'
+  | 'Fleet Owner'
+  | 'Construction Contractor'
+  | 'Marine & Industrial'
+  | 'Metal Fabricator'
+  | 'Industrial Plant'
+  | 'Dealer / Retailer'
+  | 'Retailer'
+  | 'Other'
+  | string;
+
+export type CustomerStatus = 'Active' | 'Inactive' | 'Lead' | 'Prospect' | 'New' | string;
+
+export interface VisitNote {
+  id: string;
+  customerId: string;
+  date: string;
+  time: string;
+  loggedInUserId: string;
+  loggedInUserName: string;
+  serviceFeedback: string;
+  brandPerception: string;
+  lastVisitDate: string;
+  summaryNote: string;
+  isProductive: boolean;
+  callOutcome?: string;
+  nextFollowUpDate?: string;
+  createdAt: string;
+}
 
 export interface Customer {
   id: string;
@@ -47,6 +77,11 @@ export interface Customer {
   lastVisitDate?: string;
   lastContactDate?: string;
   nextFollowUpDate?: string;
+  serviceRating?: string;
+  brandPerception?: string;
+  isLastCallProductive?: boolean;
+  visitNotes?: VisitNote[];
+  outstandingBalanceLkr?: number;
   notes?: string;
   createdAt: string;
   createdBy: string;
@@ -54,19 +89,26 @@ export interface Customer {
   updatedBy: string;
 }
 
-export type LeadStatus = 'New' | 'Contacted' | 'Qualified' | 'Converted to Customer' | 'Lost';
+export type LeadStatus = 'New' | 'Contacted' | 'Qualified' | 'Converted to Customer' | 'Lost' | string;
 
 export interface Lead {
   id: string;
-  contactName: string;
+  contactName?: string;
+  contactPerson?: string;
   companyName: string;
-  phone: string;
+  phone?: string;
+  mobile?: string;
+  telephone?: string;
   email: string;
+  address?: string;
   city: string;
-  requirement: string;
+  industry?: string;
+  productInterest?: string;
+  requirement?: string;
   estimatedValueLkr: number;
   source: string;
-  status: LeadStatus;
+  stage?: string;
+  status?: LeadStatus;
   assignedCrmUserId: string;
   assignedSalespersonId?: string;
   notes?: string;
@@ -79,9 +121,12 @@ export type CallOutcome =
   | 'Answered - Follow-up Needed'
   | 'Answered - Complaint Raised'
   | 'Answered - Inquiry Created'
+  | 'Answered - Order Inquired'
+  | 'Answered - Product Demo'
   | 'No Answer'
   | 'Busy'
-  | 'Wrong Number';
+  | 'Wrong Number'
+  | string;
 
 export interface CallRecord {
   id: string;
@@ -100,18 +145,21 @@ export interface CallRecord {
   linkedComplaintId?: string;
 }
 
-export type InquiryDivision = 'Automotive' | 'Construction & Fasteners' | 'Metal & Maintenance' | 'Cargo & Fleet';
-export type InquiryStatus = 'New' | 'Quoted' | 'Follow-up Required' | 'Converted to Order' | 'Cancelled';
+export type InquiryDivision = 'Automotive' | 'Construction & Fasteners' | 'Construction' | 'Metal & Maintenance' | 'Cargo & Fleet' | 'Safety & PPE' | string;
+export type InquiryStatus = 'New' | 'Quoted' | 'Quote Sent' | 'Follow-up Required' | 'Pending Customer' | 'Converted to Order' | 'Cancelled' | string;
 
 export interface Inquiry {
   id: string;
   customerId?: string;
+  leadId?: string;
   companyName: string;
   contactPerson: string;
   phone: string;
   division: InquiryDivision;
-  productCategory: string;
-  requirementDetails: string;
+  productCategory?: string;
+  requirementDetails?: string;
+  itemsRequested?: string;
+  inquiryType?: string;
   estimatedValueLkr: number;
   status: InquiryStatus;
   assignedSalespersonId?: string;
@@ -122,7 +170,7 @@ export interface Inquiry {
 }
 
 export type ComplaintPriority = 'Critical' | 'High' | 'Medium' | 'Low';
-export type ComplaintStatus = 'Open' | 'Under Investigation' | 'Resolved' | 'Closed';
+export type ComplaintStatus = 'Open' | 'Under Investigation' | 'Action Required' | 'Resolved' | 'Closed' | string;
 
 export interface Complaint {
   id: string;

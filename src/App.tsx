@@ -40,6 +40,7 @@ export const App: React.FC = () => {
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [customerSalespersonFilter, setCustomerSalespersonFilter] = useState('ALL');
 
   const openLogCall = (params?: { customerId?: string; leadId?: string; phone?: string }) => {
     setLogCallCustomerId(params?.customerId);
@@ -104,6 +105,8 @@ export const App: React.FC = () => {
                 onEditCustomer={openEditCustomer}
                 onSelectCustomer={openCustomerDetail}
                 onLogCallForCustomer={handleLogCallForCustomer}
+                initialSalespersonFilter={customerSalespersonFilter}
+                onClearSalespersonFilter={() => setCustomerSalespersonFilter('ALL')}
               />
             )}
 
@@ -135,7 +138,13 @@ export const App: React.FC = () => {
             )}
 
             {currentModule === 'Salespersons' && (
-              <SalespersonsPage onSelectCustomer={openCustomerDetail} />
+              <SalespersonsPage
+                onSelectCustomer={openCustomerDetail}
+                onNavigateToCustomers={salesId => {
+                  setCustomerSalespersonFilter(salesId);
+                  setCurrentModule('Customers');
+                }}
+              />
             )}
 
             {currentModule === 'PABX Import' && (
@@ -153,7 +162,12 @@ export const App: React.FC = () => {
 
             {currentModule === 'Reports' && <ReportsPage />}
 
-            {currentModule === 'Performance' && <PerformancePage />}
+            {currentModule === 'Performance' && (
+              <PerformancePage
+                onSelectCustomer={openCustomerDetail}
+                onOpenLogCall={() => openLogCall()}
+              />
+            )}
 
             {currentModule === 'Notifications' && (
               <NotificationsPage onNavigate={mod => setCurrentModule(mod)} />

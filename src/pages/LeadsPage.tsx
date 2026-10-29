@@ -104,7 +104,7 @@ export const LeadsPage: React.FC<LeadsPageProps> = ({
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#CC0000] text-white text-xs font-bold hover:bg-[#B30000] shadow-xs transition-colors"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#CC0000] text-white text-xs font-bold hover:bg-[#B30000] shadow-xs transition-colors shrink-0 self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>Register New Lead</span>

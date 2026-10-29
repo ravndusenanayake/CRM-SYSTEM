@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCrm } from '../context/CrmContext';
 import { Customer } from '../types/crm';
 import {
@@ -9,7 +9,8 @@ import {
   Edit,
   Trash2,
   Eye,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 
 interface CustomersPageProps {
@@ -17,20 +18,30 @@ interface CustomersPageProps {
   onEditCustomer: (customer: Customer) => void;
   onSelectCustomer: (customerId: string) => void;
   onLogCallForCustomer: (customer: Customer) => void;
+  initialSalespersonFilter?: string;
+  onClearSalespersonFilter?: () => void;
 }
 
 export const CustomersPage: React.FC<CustomersPageProps> = ({
   onOpenNewCustomer,
   onEditCustomer,
   onSelectCustomer,
-  onLogCallForCustomer
+  onLogCallForCustomer,
+  initialSalespersonFilter = 'ALL',
+  onClearSalespersonFilter
 }) => {
   const { customers, deleteCustomer, salespersons, users } = useCrm();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [salespersonFilter, setSalespersonFilter] = useState('ALL');
+  const [salespersonFilter, setSalespersonFilter] = useState(initialSalespersonFilter || 'ALL');
+
+  useEffect(() => {
+    if (initialSalespersonFilter) {
+      setSalespersonFilter(initialSalespersonFilter);
+    }
+  }, [initialSalespersonFilter]);
 
   const filtered = customers.filter(c => {
     const matchesSearch =
@@ -109,7 +120,7 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
           <button
             onClick={exportCsv}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors"
@@ -177,6 +188,34 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({
           ))}
         </select>
       </div>
+
+      {/* Active Salesperson Filter Banner */}
+      {salespersonFilter !== 'ALL' && (() => {
+        const rep = salespersons.find(s => s.id === salespersonFilter);
+        return (
+          <div className="bg-red-50 border border-red-200 rounded p-3 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] font-bold bg-[#CC0000] text-white px-1.5 py-0.5 rounded">
+                {rep?.code || 'REP'}
+              </span>
+              <span className="text-slate-800">
+                Filtered by Sales Consultant: <strong className="font-semibold text-slate-900">{rep?.name || salespersonFilter}</strong> ({filtered.length} assigned accounts)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSalespersonFilter('ALL');
+                if (onClearSalespersonFilter) onClearSalespersonFilter();
+              }}
+              className="inline-flex items-center gap-1 text-xs text-[#CC0000] hover:text-red-800 font-semibold cursor-pointer px-2 py-1 bg-white rounded border border-red-200 hover:bg-red-50"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>Clear Filter (Show All)</span>
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Customers Table */}
       <div className="bg-white border border-slate-200 rounded overflow-hidden shadow-xs">

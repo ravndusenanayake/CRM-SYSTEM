@@ -49,15 +49,20 @@ export const ReportsPage: React.FC = () => {
       ]);
     } else {
       headers = ['Rep Code', 'Name', 'Region', 'Division', 'Current Sales (LKR)', 'Quarter Target (LKR)', 'Achievement %'];
-      rows = salespersons.map(s => [
-        s.code,
-        `"${s.name}"`,
-        s.region,
-        s.division,
-        s.currentSalesLkr,
-        s.targetQuarterLkr,
-        `${((s.currentSalesLkr / s.targetQuarterLkr) * 100).toFixed(1)}%`
-      ]);
+      rows = salespersons.map(s => {
+        const target = s.targetQuarterLkr || (s.monthlyTargetLkr ? s.monthlyTargetLkr * 3 : 10000000);
+        const current = s.currentSalesLkr || 0;
+        const pct = target > 0 ? ((current / target) * 100).toFixed(1) : '0.0';
+        return [
+          s.code,
+          `"${s.name}"`,
+          s.region,
+          s.division,
+          current,
+          target,
+          `${pct}%`
+        ];
+      });
     }
 
     const csvContent =
@@ -88,7 +93,7 @@ export const ReportsPage: React.FC = () => {
 
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#CC0000] text-white text-xs font-bold hover:bg-[#B30000] shadow-xs"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#CC0000] text-white text-xs font-bold hover:bg-[#B30000] shadow-xs shrink-0 self-start sm:self-auto"
         >
           <Download className="h-4 w-4" />
           <span>Export {reportType.toUpperCase()} CSV</span>
@@ -227,18 +232,23 @@ export const ReportsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {salespersons.map(s => (
-                  <tr key={s.id}>
-                    <td className="px-3 py-2 font-mono font-bold text-[#CC0000]">{s.code}</td>
-                    <td className="px-3 py-2 font-bold">{s.name}</td>
-                    <td className="px-3 py-2">{s.region}</td>
-                    <td className="px-3 py-2 font-mono">Rs. {s.currentSalesLkr.toLocaleString()}</td>
-                    <td className="px-3 py-2 font-mono">Rs. {s.targetQuarterLkr.toLocaleString()}</td>
-                    <td className="px-3 py-2 font-bold font-mono">
-                      {((s.currentSalesLkr / s.targetQuarterLkr) * 100).toFixed(1)}%
-                    </td>
-                  </tr>
-                ))}
+                {salespersons.map(s => {
+                  const target = s.targetQuarterLkr || (s.monthlyTargetLkr ? s.monthlyTargetLkr * 3 : 10000000);
+                  const current = s.currentSalesLkr || 0;
+                  const pct = target > 0 ? ((current / target) * 100).toFixed(1) : '0.0';
+                  return (
+                    <tr key={s.id}>
+                      <td className="px-3 py-2 font-mono font-bold text-[#CC0000]">{s.code}</td>
+                      <td className="px-3 py-2 font-bold">{s.name}</td>
+                      <td className="px-3 py-2">{s.region}</td>
+                      <td className="px-3 py-2 font-mono">Rs. {current.toLocaleString()}</td>
+                      <td className="px-3 py-2 font-mono">Rs. {target.toLocaleString()}</td>
+                      <td className="px-3 py-2 font-bold font-mono">
+                        {pct}%
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

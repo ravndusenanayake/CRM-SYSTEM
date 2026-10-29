@@ -3,6 +3,7 @@ import {
   User,
   Salesperson,
   Customer,
+  VisitNote,
   Lead,
   CallRecord,
   Inquiry,
@@ -96,7 +97,16 @@ interface CrmContextType {
   updateCustomer: (id: string, updates: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
   reassignCustomer: (customerId: string, newCrmUserId?: string, newSalespersonId?: string) => void;
-  addCustomerVisitNotes: (customerId: string, notes: string) => void;
+  addCustomerVisitNotes: (
+    customerId: string,
+    notes: string | {
+      summaryNote: string;
+      serviceFeedback?: string;
+      brandPerception?: string;
+      lastVisitDate?: string;
+      isProductive?: boolean;
+    }
+  ) => void;
   bulkImportCustomers: (newCustomers: Omit<Customer, 'id' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[]) => number;
 
   addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => Lead;
@@ -127,12 +137,20 @@ interface CrmContextType {
 
 const CrmContext = createContext<CrmContextType | undefined>(undefined);
 
+const normalizeSalespersons = (list: Salesperson[]): Salesperson[] =>
+  (list || []).map(s => ({
+    ...s,
+    targetQuarterLkr: s.targetQuarterLkr || (s.monthlyTargetLkr ? s.monthlyTargetLkr * 3 : 10000000)
+  }));
+
 export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [dbStatus, setDbStatus] = useState<DbStatus>('connecting');
 
   const [users, setUsers] = useState<User[]>(() => loadFromStorage('users', INITIAL_USERS));
   const [currentUserId, setCurrentUserId] = useState<string>(() => loadFromStorage('currentUserId', 'admin-1'));
-  const [salespersons, setSalespersons] = useState<Salesperson[]>(() => loadFromStorage('salespersons', INITIAL_SALESPERSONS));
+  const [salespersons, setSalespersons] = useState<Salesperson[]>(() =>
+    normalizeSalespersons(loadFromStorage('salespersons', INITIAL_SALESPERSONS))
+  );
   const [allCustomers, setAllCustomers] = useState<Customer[]>(() => loadFromStorage('customers', INITIAL_CUSTOMERS));
   const [allLeads, setAllLeads] = useState<Lead[]>(() => loadFromStorage('leads', INITIAL_LEADS));
   const [calls, setCalls] = useState<CallRecord[]>(() => loadFromStorage('calls', INITIAL_CALLS));
@@ -161,7 +179,7 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const data = await crmApi.getBootstrap();
       if (data) {
         if (data.users?.length) setUsers(data.users);
-        if (data.salespersons?.length) setSalespersons(data.salespersons);
+        if (data.salespersons?.length) setSalespersons(normalizeSalespersons(data.salespersons));
         if (data.customers?.length) setAllCustomers(data.customers);
         if (data.leads?.length) setAllLeads(data.leads);
         if (data.calls?.length) setCalls(data.calls);
@@ -265,15 +283,52 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const addCustomerVisitNotes = (customerId: string, newNote: string) => {
+  const addCustomerVisitNotes = (
+    customerId: string,
+    noteInput: string | {
+      summaryNote: string;
+      serviceFeedback?: string;
+      brandPerception?: string;
+      lastVisitDate?: string;
+      isProductive?: boolean;
+    }
+  ) => {
     const today = new Date().toISOString().split('T')[0];
+    const timeStr = new Date().toTimeString().split(' ')[0];
+    const textNote = typeof noteInput === 'string' ? noteInput : noteInput.summaryNote;
+    const sFeedback = typeof noteInput === 'object' && noteInput.serviceFeedback ? noteInput.serviceFeedback : 'Good';
+    const bPerception = typeof noteInput === 'object' && noteInput.brandPerception ? noteInput.brandPerception : 'Highly Respected / Premium';
+    const vDate = typeof noteInput === 'object' && noteInput.lastVisitDate ? noteInput.lastVisitDate : today;
+    const productive = typeof noteInput === 'object' && noteInput.isProductive !== undefined ? noteInput.isProductive : true;
+
     setAllCustomers(prev =>
       prev.map(c => {
         if (c.id !== customerId) return c;
-        const updatedNotes = c.notes ? `${c.notes}\n[${today} - ${currentUser.name}]: ${newNote}` : `[${today} - ${currentUser.name}]: ${newNote}`;
+        const newNoteObj: VisitNote = {
+          id: `NOTE-${customerId}-${(c.visitNotes?.length || 0) + 1}`,
+          customerId,
+          date: today,
+          time: timeStr,
+          loggedInUserId: currentUser.id,
+          loggedInUserName: currentUser.name,
+          serviceFeedback: sFeedback,
+          brandPerception: bPerception,
+          lastVisitDate: vDate,
+          summaryNote: textNote,
+          isProductive: productive,
+          callOutcome: productive ? 'Answered - Productive Interaction' : 'Answered - Non-Productive',
+          createdAt: `${today} ${timeStr}`
+        };
+
+        const updatedNotes = c.notes ? `${c.notes}\n[${today} - ${currentUser.name}]: ${textNote}` : `[${today} - ${currentUser.name}]: ${textNote}`;
         return {
           ...c,
           notes: updatedNotes,
+          serviceRating: sFeedback,
+          brandPerception: bPerception,
+          lastVisitDate: vDate,
+          isLastCallProductive: productive,
+          visitNotes: [newNoteObj, ...(c.visitNotes || [])],
           lastContactDate: today,
           updatedAt: today,
           updatedBy: currentUser.name
@@ -283,7 +338,7 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // Async DB save
     if (dbStatus === 'connected') {
-      crmApi.addCustomerVisitNotes(customerId, newNote, currentUser.name).catch(err =>
+      crmApi.addCustomerVisitNotes(customerId, textNote, currentUser.name).catch(err =>
         console.error('Failed to save visit note to SQLite:', err)
       );
     }

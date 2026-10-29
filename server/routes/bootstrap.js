@@ -8,7 +8,11 @@ router.get('/', (req, res) => {
     const rawUsers = db.prepare('SELECT * FROM users').all();
     const users = rawUsers.map(u => ({ ...u, active: Boolean(u.active) }));
 
-    const salespersons = db.prepare('SELECT * FROM salespersons').all();
+    const rawSalespersons = db.prepare('SELECT * FROM salespersons').all();
+    const salespersons = rawSalespersons.map(s => ({
+      ...s,
+      targetQuarterLkr: s.targetQuarterLkr || (s.monthlyTargetLkr ? s.monthlyTargetLkr * 3 : 10000000)
+    }));
     const customers = db.prepare('SELECT * FROM customers ORDER BY createdAt DESC').all();
     const leads = db.prepare('SELECT * FROM leads ORDER BY createdAt DESC').all();
     const calls = db.prepare('SELECT * FROM calls ORDER BY callDate DESC').all();

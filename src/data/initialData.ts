@@ -84,6 +84,7 @@ export const INITIAL_SALESPERSONS: Salesperson[] = [
     "region": "Colombo Metro & Port Zone",
     "division": "Automotive",
     "monthlyTargetLkr": 3500000,
+    "targetQuarterLkr": 10500000,
     "currentSalesLkr": 2850000
   },
   {
@@ -95,6 +96,7 @@ export const INITIAL_SALESPERSONS: Salesperson[] = [
     "region": "Gampaha, Negombo & Biyagama FTZ",
     "division": "Metal & Maintenance",
     "monthlyTargetLkr": 3200000,
+    "targetQuarterLkr": 9600000,
     "currentSalesLkr": 2980000
   },
   {
@@ -106,6 +108,7 @@ export const INITIAL_SALESPERSONS: Salesperson[] = [
     "region": "Central Province (Kandy, Katugastota)",
     "division": "Automotive",
     "monthlyTargetLkr": 2800000,
+    "targetQuarterLkr": 8400000,
     "currentSalesLkr": 2150000
   },
   {
@@ -117,6 +120,7 @@ export const INITIAL_SALESPERSONS: Salesperson[] = [
     "region": "Southern Province (Galle, Matara, Hambantota)",
     "division": "Construction",
     "monthlyTargetLkr": 3000000,
+    "targetQuarterLkr": 9000000,
     "currentSalesLkr": 2420000
   },
   {
@@ -128,6 +132,7 @@ export const INITIAL_SALESPERSONS: Salesperson[] = [
     "region": "North Western (Kurunegala, Kuliyapitiya)",
     "division": "Cargo & Transport",
     "monthlyTargetLkr": 2600000,
+    "targetQuarterLkr": 7800000,
     "currentSalesLkr": 2100000
   },
   {
@@ -139,6 +144,7 @@ export const INITIAL_SALESPERSONS: Salesperson[] = [
     "region": "Western South (Moratuwa, Panadura, Kalutara)",
     "division": "Metal & Maintenance",
     "monthlyTargetLkr": 2900000,
+    "targetQuarterLkr": 8700000,
     "currentSalesLkr": 2700000
   },
   {
@@ -150,6 +156,7 @@ export const INITIAL_SALESPERSONS: Salesperson[] = [
     "region": "National Key Accounts (Dealerships)",
     "division": "Key Accounts",
     "monthlyTargetLkr": 6000000,
+    "targetQuarterLkr": 18000000,
     "currentSalesLkr": 5450000
   }
 ];
@@ -295,6 +302,27 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     "lastVisitDate": "2026-09-18",
     "lastContactDate": "2026-09-29",
     "nextFollowUpDate": "2026-10-07",
+    "serviceRating": "Good",
+    "brandPerception": "Highly Respected / Premium",
+    "isLastCallProductive": true,
+    "visitNotes": [
+      {
+        "id": "NOTE-1005-1",
+        "customerId": "CUST-1005",
+        "date": "2026-09-18",
+        "time": "14:20:00",
+        "loggedInUserId": "user-1",
+        "loggedInUserName": "Chaminda Perera",
+        "serviceFeedback": "Good",
+        "brandPerception": "Highly Respected / Premium",
+        "lastVisitDate": "2026-09-18",
+        "summaryNote": "Workshop visit with sales consultant. Inspected spray guns and chemical storage. Client requested demo of Würth Diesel Cure and brake measuring tools.",
+        "isProductive": true,
+        "callOutcome": "Answered - Product Demo",
+        "nextFollowUpDate": "2026-10-07",
+        "createdAt": "2026-09-18 14:20:00"
+      }
+    ],
     "notes": "Requested product trial on Würth Diesel Cure additive and brake disc measuring gauges.",
     "createdAt": "2025-05-20",
     "createdBy": "Chaminda Perera",
@@ -581,72 +609,73 @@ export const INITIAL_LEADS: Lead[] = [
 ];
 
 export const INITIAL_CALLS: CallRecord[] = [
+  // Today's Calls (2026-10-22)
   {
     "id": "CALL-2026-101",
     "customerId": "CUST-1001",
     "contactName": "Sarath Gunawardena",
     "companyName": "DIMO Logistics & Service Hub",
     "phoneNumber": "+94 77 450 1122",
-    "callDate": "2026-10-02 10:15",
+    "callDate": "2026-10-22 09:15",
     "durationSeconds": 240,
     "outcome": "Answered - Order Inquired",
-    "notes": "Sarath wants quotation for 24 cans of Rost Off Max and 10 boxes of Zebra cutting discs. Quote forwarded to Malith Alwis.",
-    "nextFollowUpDate": "2026-10-06",
+    "notes": "Sarath requested quotation for 24 cans of Rost Off Max and 10 boxes of Zebra cutting discs. Quote forwarded to Malith Alwis.",
+    "nextFollowUpDate": "2026-10-26",
     "crmUserId": "user-1",
     "linkedInquiryId": "INQ-2026-001"
   },
   {
     "id": "CALL-2026-102",
-    "customerId": "CUST-1005",
-    "contactName": "Nalaka Bandara",
-    "companyName": "Kandy Precision Motor Works",
-    "phoneNumber": "+94 77 222 4567",
-    "callDate": "2026-09-29 14:30",
-    "durationSeconds": 180,
-    "outcome": "Answered - Follow-up Needed",
-    "notes": "Discussed periodic supply of Würth brake fluid DOT 4 and engine flush. Follow up once shop expansion is complete.",
-    "nextFollowUpDate": "2026-10-07",
-    "crmUserId": "user-1"
-  },
-  {
-    "id": "CALL-2026-103",
     "customerId": "CUST-1002",
     "contactName": "Ranjith Samarasinghe",
     "companyName": "United Motors Bodyshop & Paint",
     "phoneNumber": "+94 77 321 9988",
-    "callDate": "2026-10-01 11:20",
-    "durationSeconds": 310,
+    "callDate": "2026-10-22 10:30",
+    "durationSeconds": 185,
     "outcome": "Answered - Positive",
-    "notes": "Confirmed satisfaction with recent delivery of Würth orbital sanders and dry sanding discs.",
-    "nextFollowUpDate": "2026-10-08",
-    "crmUserId": "user-2"
+    "notes": "Confirmed workshop satisfaction with pneumatic orbital sanders. Discussion on upcoming sandpaper bulk order.",
+    "nextFollowUpDate": "2026-10-29",
+    "crmUserId": "user-1"
+  },
+  {
+    "id": "CALL-2026-103",
+    "customerId": "CUST-1005",
+    "contactName": "Nalaka Bandara",
+    "companyName": "Kandy Precision Motor Works",
+    "phoneNumber": "+94 77 222 4567",
+    "callDate": "2026-10-22 11:45",
+    "durationSeconds": 210,
+    "outcome": "Answered - Follow-up Needed",
+    "notes": "Discussed periodic supply of Würth brake fluid DOT 4 and engine flush. Follow up once shop expansion is complete.",
+    "nextFollowUpDate": "2026-10-27",
+    "crmUserId": "user-1"
   },
   {
     "id": "CALL-2026-104",
+    "customerId": "CUST-1006",
+    "contactName": "Samantha Wickramasinghe",
+    "companyName": "Access Engineering Fabrication Facility",
+    "phoneNumber": "+94 77 987 6543",
+    "callDate": "2026-10-22 14:10",
+    "durationSeconds": 45,
+    "outcome": "Busy",
+    "notes": "Client was in engineering site meeting. Will callback after 4:00 PM.",
+    "nextFollowUpDate": "2026-10-23",
+    "crmUserId": "user-1"
+  },
+  {
+    "id": "CALL-2026-105",
     "customerId": "CUST-1004",
     "contactName": "Asanka Karunaratne",
     "companyName": "Auto Mirage Premier Care",
     "phoneNumber": "+94 77 654 3210",
-    "callDate": "2026-10-03 15:45",
-    "durationSeconds": 195,
+    "callDate": "2026-10-22 09:40",
+    "durationSeconds": 290,
     "outcome": "Answered - Complaint Raised",
-    "notes": "Client reported 3 spray nozzles were damaged in the last carton of Würth Quick Fresh air-con cleaner. Logged complaint.",
-    "nextFollowUpDate": "2026-10-05",
+    "notes": "Reported aerosol nozzle defect on latest brake cleaner batch. Logged dispute under investigation CMP-2026-001.",
+    "nextFollowUpDate": "2026-10-24",
     "crmUserId": "user-2",
     "linkedComplaintId": "CMP-2026-001"
-  },
-  {
-    "id": "CALL-2026-105",
-    "customerId": "CUST-1003",
-    "contactName": "Mahesh Wijetunga",
-    "companyName": "Maga Engineering Mechanical Works",
-    "phoneNumber": "+94 71 888 2314",
-    "callDate": "2026-09-30 09:40",
-    "durationSeconds": 215,
-    "outcome": "Answered - Positive",
-    "notes": "Reviewed tender specs for Port City bridge anchorage. Need technical test reports on WIT-PE 500 chemical anchors.",
-    "nextFollowUpDate": "2026-10-05",
-    "crmUserId": "user-3"
   },
   {
     "id": "CALL-2026-106",
@@ -654,12 +683,12 @@ export const INITIAL_CALLS: CallRecord[] = [
     "contactName": "Chathura Senadheera",
     "companyName": "Lanka Ashok Leyland Heavy Fleet",
     "phoneNumber": "+94 77 554 1122",
-    "callDate": "2026-10-01 16:10",
-    "durationSeconds": 90,
-    "outcome": "Answered - Follow-up Needed",
-    "notes": "Requested product catalog for Würth commercial vehicle air brake line fittings.",
-    "nextFollowUpDate": "2026-10-09",
-    "crmUserId": "user-4"
+    "callDate": "2026-10-22 11:15",
+    "durationSeconds": 310,
+    "outcome": "Answered - Order Inquired",
+    "notes": "Heavy transport division tender inquiry for 50 boxes of automotive electrical connectors.",
+    "nextFollowUpDate": "2026-10-28",
+    "crmUserId": "user-2"
   },
   {
     "id": "CALL-2026-107",
@@ -667,25 +696,172 @@ export const INITIAL_CALLS: CallRecord[] = [
     "contactName": "Ruwan Pathirana",
     "companyName": "Kelani Cables Industrial Maintenance",
     "phoneNumber": "+94 77 444 8901",
-    "callDate": "2026-09-27 10:50",
-    "durationSeconds": 45,
-    "outcome": "Busy",
-    "notes": "Line busy, will retry next week.",
-    "nextFollowUpDate": "2026-10-07",
-    "crmUserId": "user-5"
+    "callDate": "2026-10-22 13:50",
+    "durationSeconds": 220,
+    "outcome": "Answered - Positive",
+    "notes": "Routine plant maintenance follow-up. Very satisfied with high-temp copper paste delivery.",
+    "nextFollowUpDate": "2026-10-30",
+    "crmUserId": "user-2"
   },
   {
     "id": "CALL-2026-108",
+    "customerId": "CUST-1003",
+    "contactName": "Mahesh Wijetunga",
+    "companyName": "Maga Engineering Mechanical Works",
+    "phoneNumber": "+94 71 888 2314",
+    "callDate": "2026-10-22 10:10",
+    "durationSeconds": 340,
+    "outcome": "Answered - Inquiry Created",
+    "notes": "Tender specifications for bridge anchorage project. Issued quotation request for WIT-PE 500 chemical anchors.",
+    "nextFollowUpDate": "2026-10-25",
+    "crmUserId": "user-3"
+  },
+  {
+    "id": "CALL-2026-109",
     "customerId": "CUST-1010",
     "contactName": "Indika Jayawardena",
     "companyName": "Kurunegala Heavy Equipment Workshop",
     "phoneNumber": "+94 77 111 5678",
-    "callDate": "2026-10-02 14:10",
-    "durationSeconds": 280,
+    "callDate": "2026-10-22 14:35",
+    "durationSeconds": 260,
     "outcome": "Answered - Positive",
-    "notes": "First outbound call to newly registered customer. Confirmed address in Kurunegala, assigned to Priyantha Jayasuriya.",
-    "nextFollowUpDate": "2026-10-05",
+    "notes": "Confirmed receipt of monthly catalogue. Welcomed regional sales rep Priyantha Jayasuriya visit next Tuesday.",
+    "nextFollowUpDate": "2026-10-27",
+    "crmUserId": "user-3"
+  },
+  {
+    "id": "CALL-2026-110",
+    "customerId": "CUST-1002",
+    "contactName": "Ranjith Samarasinghe",
+    "companyName": "United Motors Bodyshop & Paint",
+    "phoneNumber": "+94 77 321 9988",
+    "callDate": "2026-10-22 11:20",
+    "durationSeconds": 190,
+    "outcome": "Answered - Product Demo",
+    "notes": "Arranged Würth technical demo on Vario-Loc spot weld drill system at United Motors Hyde Park corner bodyshop.",
+    "nextFollowUpDate": "2026-10-28",
+    "crmUserId": "user-4"
+  },
+  {
+    "id": "CALL-2026-111",
+    "customerId": "CUST-1001",
+    "contactName": "Sarath Gunawardena",
+    "companyName": "DIMO Logistics & Service Hub",
+    "phoneNumber": "+94 77 450 1122",
+    "callDate": "2026-10-22 15:00",
+    "durationSeconds": 60,
+    "outcome": "No Answer",
+    "notes": "Call rang out without answer. Scheduled retry for tomorrow morning.",
+    "nextFollowUpDate": "2026-10-23",
     "crmUserId": "user-5"
+  },
+
+  // This Week's Previous Calls (2026-10-21 & 2026-10-20)
+  {
+    "id": "CALL-2026-112",
+    "customerId": "CUST-1003",
+    "contactName": "Mahesh Wijetunga",
+    "companyName": "Maga Engineering Mechanical Works",
+    "phoneNumber": "+94 71 888 2314",
+    "callDate": "2026-10-21 11:30",
+    "durationSeconds": 275,
+    "outcome": "Answered - Positive",
+    "notes": "Discussed precast concrete anchor bolts requirements.",
+    "nextFollowUpDate": "2026-10-28",
+    "crmUserId": "user-1"
+  },
+  {
+    "id": "CALL-2026-113",
+    "customerId": "CUST-1006",
+    "contactName": "Samantha Wickramasinghe",
+    "companyName": "Access Engineering Fabrication Facility",
+    "phoneNumber": "+94 77 987 6543",
+    "callDate": "2026-10-21 14:15",
+    "durationSeconds": 315,
+    "outcome": "Answered - Order Inquired",
+    "notes": "Inquired bulk prices for structural hex bolts grade 8.8.",
+    "nextFollowUpDate": "2026-10-29",
+    "crmUserId": "user-1"
+  },
+  {
+    "id": "CALL-2026-114",
+    "customerId": "CUST-1007",
+    "contactName": "Chathura Senadheera",
+    "companyName": "Lanka Ashok Leyland Heavy Fleet",
+    "phoneNumber": "+94 77 554 1122",
+    "callDate": "2026-10-21 10:00",
+    "durationSeconds": 195,
+    "outcome": "Answered - Positive",
+    "notes": "Confirmed satisfaction with Würth fleet wiper blades.",
+    "nextFollowUpDate": "2026-10-31",
+    "crmUserId": "user-2"
+  },
+  {
+    "id": "CALL-2026-115",
+    "customerId": "CUST-1004",
+    "contactName": "Asanka Karunaratne",
+    "companyName": "Auto Mirage Premier Care",
+    "phoneNumber": "+94 77 654 3210",
+    "callDate": "2026-10-20 15:20",
+    "durationSeconds": 240,
+    "outcome": "Answered - Follow-up Needed",
+    "notes": "Follow up on ceramic coating detailing package.",
+    "nextFollowUpDate": "2026-10-27",
+    "crmUserId": "user-3"
+  },
+  {
+    "id": "CALL-2026-116",
+    "customerId": "CUST-1005",
+    "contactName": "Nalaka Bandara",
+    "companyName": "Kandy Precision Motor Works",
+    "phoneNumber": "+94 77 222 4567",
+    "callDate": "2026-10-20 11:45",
+    "durationSeconds": 180,
+    "outcome": "Answered - Positive",
+    "notes": "Kandy workshop supplies running smoothly.",
+    "nextFollowUpDate": "2026-10-28",
+    "crmUserId": "user-4"
+  },
+  {
+    "id": "CALL-2026-117",
+    "customerId": "CUST-1009",
+    "contactName": "Ruwan Pathirana",
+    "companyName": "Kelani Cables Industrial Maintenance",
+    "phoneNumber": "+94 77 444 8901",
+    "callDate": "2026-10-19 14:00",
+    "durationSeconds": 210,
+    "outcome": "Answered - Order Inquired",
+    "notes": "Requesting 12 cans of silicone fluid and electrical contact spray.",
+    "nextFollowUpDate": "2026-10-26",
+    "crmUserId": "user-5"
+  },
+
+  // Earlier in Month (October 2026)
+  {
+    "id": "CALL-2026-118",
+    "customerId": "CUST-1001",
+    "contactName": "Sarath Gunawardena",
+    "companyName": "DIMO Logistics & Service Hub",
+    "phoneNumber": "+94 77 450 1122",
+    "callDate": "2026-10-02 10:15",
+    "durationSeconds": 240,
+    "outcome": "Answered - Order Inquired",
+    "notes": "Initial inquiry on 24 cans of Rost Off Max.",
+    "nextFollowUpDate": "2026-10-06",
+    "crmUserId": "user-1"
+  },
+  {
+    "id": "CALL-2026-119",
+    "customerId": "CUST-1002",
+    "contactName": "Ranjith Samarasinghe",
+    "companyName": "United Motors Bodyshop & Paint",
+    "phoneNumber": "+94 77 321 9988",
+    "callDate": "2026-10-01 11:20",
+    "durationSeconds": 310,
+    "outcome": "Answered - Positive",
+    "notes": "Monthly quality follow-up.",
+    "nextFollowUpDate": "2026-10-08",
+    "crmUserId": "user-2"
   }
 ];
 

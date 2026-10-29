@@ -85,7 +85,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         {/* Daily Call Target Widget */}
-        <div className="bg-slate-50 border border-slate-200 rounded p-3 min-w-[240px]">
+        <div className="bg-slate-50 border border-slate-200 rounded p-3 min-w-[240px] shrink-0 self-start md:self-auto">
           <div className="flex items-center justify-between text-xs mb-1">
             <span className="font-semibold text-slate-700">Daily Call Target</span>
             <span className="font-mono font-bold text-[#CC0000]">

@@ -5,7 +5,11 @@ const router = Router();
 
 router.get('/', (req, res) => {
   try {
-    const list = db.prepare('SELECT * FROM salespersons').all();
+    const rawList = db.prepare('SELECT * FROM salespersons').all();
+    const list = rawList.map(s => ({
+      ...s,
+      targetQuarterLkr: s.targetQuarterLkr || (s.monthlyTargetLkr ? s.monthlyTargetLkr * 3 : 10000000)
+    }));
     res.json({ success: true, data: list });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

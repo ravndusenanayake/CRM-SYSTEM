@@ -34,7 +34,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate
 
         <button
           onClick={markAllNotificationsAsRead}
-          className="px-3.5 py-1.5 rounded border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors"
+          className="px-3.5 py-1.5 rounded border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors shrink-0 self-start sm:self-auto"
         >
           Mark All as Read
         </button>
